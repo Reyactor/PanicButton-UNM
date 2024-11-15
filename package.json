@@ -1,0 +1,26 @@
+{
+  "name": "panicbutton-unm",
+  "module": "index.ts",
+  "scripts": {
+    "start": "bun index.ts"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.0",
+    "@types/nunjucks": "^3.2.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@firebase/app": "^0.10.16",
+    "@firebase/auth": "^1.8.1",
+    "chokidar": "^4.0.1",
+    "express": "^4.21.1",
+    "express-session": "^1.18.1",
+    "nunjucks": "^3.2.4",
+    "open": "^10.1.0"
+  }
+}

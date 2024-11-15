@@ -1,0 +1,28 @@
+{% extends "_templates/body.njk" %}
+
+{% block style %}
+    <link rel="stylesheet" href="styles/login.css">
+{% endblock %}
+
+{% block login %}
+<div class="container-fluid h-100 d-flex justify-content-center align-items-center">
+    <div class="text-bg-light rounded overflow-hidden d-flex flex-column flex-md-row">
+        <div class="text-bg-primary d-flex flex-column justify-content-center align-items-center p-3">
+            <img src="img/logo.png" alt="Logo" width="150">
+            <h3 class="mt-3 mb-0 fw-bold text-center">PANIC BUTTON</h3>
+        </div>
+        <form class="p-3" action="/login" method="post">
+            <div class="mb-3">
+                <label for="login-email">Email</label>
+                <input class="form-control" type="email" name="login-email" id="login-email" autocomplete="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="login-password">Kata Sandi</label>
+                <input class="form-control" type="password" name="login-password" id="login-password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Masuk</button>
+            <a href="/register" class="btn">Daftar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

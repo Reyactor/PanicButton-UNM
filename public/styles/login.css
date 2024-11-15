@@ -1,0 +1,7 @@
+body {
+    background-image: url(../img/wall.webp);
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+    backdrop-filter: blur(15px);
+}

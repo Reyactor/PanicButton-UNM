@@ -1,0 +1,31 @@
+:root {
+    --big-button-fore: #f74d4d;
+    --big-button-back: #f86569;
+    --big-button-drop-color: #e24f4f;
+    --big-button-drop-size: 15px;
+}
+
+.big-button {
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 200px;
+    height: 200px;
+    cursor: pointer;
+    border-radius: 50%;
+    background: var(--big-button-fore);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0%, var(--big-button-fore)), color-stop(100%, var(--big-button-back)));
+    background-image: -moz-gradient(linear, left top, left bottom, color-stop(0%, var(--big-button-fore)), color-stop(100%, var(--big-button-back)));
+    box-shadow: 0 var(--big-button-drop-size) var(--big-button-drop-color);
+    user-select: none;
+
+    transition: .1s ease-out;
+}
+
+.big-button.pressed {
+    box-shadow: 0 0 var(--big-button-drop-color);
+    transform: translate(0, var(--big-button-drop-size));
+}

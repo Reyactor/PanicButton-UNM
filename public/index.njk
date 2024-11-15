@@ -1,0 +1,43 @@
+{% extends "_templates/body.njk" %}
+
+{% block style %}
+    <link rel="stylesheet" href="styles/index.css">
+{% endblock %}
+
+{% block content %}
+    <div class="w-100 h-100 d-flex flex-column justify-content-center align-items-center text-center">
+        <h4 class="fw-bold mb-5">
+            TEKAN TOMBOL INI
+            <br>
+            JIKA ANDA TERSESAT
+        </h4>
+        <div class="big-button mb-5">EMERGENCY!</div>
+        <div class="mt-3">
+            <span>Kordinat saat ini:</span>
+            <br>
+            <span>X:&nbsp;</span><span class="longtitude">0</span>
+            <span class="me-4"></span>
+            <span>Y:&nbsp;</span><span class="latitude">0</span>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalIzinLokasiGagal" tabindex="-1" aria-labelledby="modalIzinLokasiGagalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="modalIzinLokasiGagalLabel">Error</h1>
+                </div>
+                <div class="modal-body">
+                    Izin lokasi ditolak. Mohon izinkan lokasi lalu muat ulang website ini.
+                </div>
+                <div class="modal-footer">
+                    <a href="." class="btn btn-primary">Refresh</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script src="scripts/index.js"></script>
+{% endblock %}
