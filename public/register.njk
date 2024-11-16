@@ -11,7 +11,7 @@
             <img src="img/logo.png" alt="Logo" width="150">
             <h3 class="mt-3 mb-0 fw-bold text-center">PANIC BUTTON</h3>
         </div>
-        <form class="p-3 overflow-auto" action="/register" method="post" autocomplete="off">
+        <form class="p-3 overflow-auto" action="/register" method="post" autocomplete="off" enctype="multipart/form-data">
             <div class="mb-3">
                 <label for="register-name">Nama</label>
                 <input class="form-control" type="text" name="register-name" id="register-name" required>
@@ -22,22 +22,22 @@
             </div>
             <div class="mb-3">
                 <label for="register-email">Email</label>
-                <input class="form-control" type="email" name="register-email" id="register-email" required>
+                <input class="form-control" type="email" name="register-email" id="register-email" autocomplete="off" required>
             </div>
             <div class="mb-3">
                 <label for="register-password">Kata Sandi</label>
-                <input class="form-control" type="password" name="register-password" id="register-password" required>
+                <input class="form-control" type="password" name="register-password" id="register-password" autocomplete="new-password" required>
             </div>
             <div class="mb-3">
                 <label for="register-fakultas">Fakultas</label>
-                <select class="form-select" name="regsiter-fakultas" id="register-fakultas" required>
+                <select class="form-select" name="register-fakultas" id="register-fakultas" required>
                     <option selected></option>
                     <option value="Teknik">Teknik</option>
                 </select>
             </div>
             <div class="mb-3">
                 <label for="register-studi">Program Studi</label>
-                <select class="form-select" name="regsiter-studi" id="register-studi" required>
+                <select class="form-select" name="register-studi" id="register-studi" required>
                     <option selected></option>
                     <option value="Pendidikan Teknologi Pertanian">Pendidikan Teknologi Pertanian (B)</option>
                     <option value="Pendidikan Teknik Bangunan">Pendidikan Teknik Bangunan (B)</option>
@@ -49,9 +49,19 @@
                     <option value="Pendidikan Teknik Elektronika">Pendidikan Teknik Elektronika (A)</option>
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="register-photo">Foto Profil</label>
+                <input class="form-control" type="file" name="register-photo" id="register-photo" accept="image/png, image/jpeg" required>
+            </div>
             <button type="submit" class="btn btn-primary">Daftar</button>
             <a href="/login" class="btn">Masuk</a>
         </form>
     </div>
 </div>
+
+{% if alreadyRegistered %}
+    <script>
+        alert("Pengguna sudah ada. Coba lagi menggunakan email lain.");
+    </script>
+{% endif %}
 {% endblock %}

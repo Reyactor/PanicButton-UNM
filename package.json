@@ -9,6 +9,7 @@
     "@types/bun": "latest",
     "@types/express": "^5.0.0",
     "@types/express-session": "^1.18.0",
+    "@types/multer": "^1.4.12",
     "@types/nunjucks": "^3.2.6"
   },
   "peerDependencies": {
@@ -17,9 +18,11 @@
   "dependencies": {
     "@firebase/app": "^0.10.16",
     "@firebase/auth": "^1.8.1",
+    "@firebase/firestore": "^4.7.5",
     "chokidar": "^4.0.1",
     "express": "^4.21.1",
     "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1",
     "nunjucks": "^3.2.4",
     "open": "^10.1.0"
   }
