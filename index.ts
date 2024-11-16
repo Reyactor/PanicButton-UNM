@@ -1,13 +1,20 @@
 import express from "express";
-import session from "express-session";
 import multer from "multer";
 import nunjucks from "nunjucks";
 import open from "open";
 
 // Firebase
-import { FirebaseError, initializeApp } from "@firebase/app";
-import { getFirestore, collection, addDoc } from "@firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword } from "@firebase/auth";
+import { initializeApp } from "@firebase/app";
+import { getFirestore, doc, setDoc } from "@firebase/firestore";
+import { 
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    updateProfile,
+    onAuthStateChanged,
+    type User
+} from "@firebase/auth";
 
 if (
     !Bun.env["FIREBASE_API_KEY"] ||
@@ -28,15 +35,16 @@ const firebaseApp = initializeApp({
 });
 const firebaseAuth = getAuth(firebaseApp);
 const firestore = getFirestore(firebaseApp);
+let currentUser: User | null;
+
+// Perhatikan state login pengguna
+onAuthStateChanged(firebaseAuth, (user) => {
+    currentUser = user;
+    // console.log(user); // UNTUK DEBUGGING
+});
 
 // App baru
 const app = express();
-app.use(session({
-    resave: false,
-    saveUninitialized: false,
-    secret: Bun.env["SECRET"] || "test"
-}));
-
 // Handle form-data
 const upload = multer({ dest: "uploads/" });
 
@@ -58,7 +66,7 @@ app.use((req, res, next) => {
         !req.url.startsWith("/styles") &&
         !req.url.startsWith("/scripts") &&
         !req.url.startsWith("/img")
-    ) && !req.session.user) {
+    ) && !currentUser) {
         res.redirect("/login");
     } else {
         next();
@@ -86,31 +94,45 @@ app.get("/settings", (_req, res) => {
 });
 
 // Halaman login
-app.get("/login", (req, res) => {
-    if (req.session.user) {
+app.get("/login", (_req, res) => {
+    if (currentUser) {
         res.redirect("/");
     } else {
         res.render("login", { login: true, title: "Masuk" });
     }
 });
 
-// Halaman register
-app.get("/register", (req, res) => {
-    if (req.session.user) {
-        res.redirect("/");
-    } else {
-        res.render("register", {
-            login: true,
-            title: "Daftar",
-        });
+// POST Login
+app.post("/login", express.urlencoded({ extended: true }), async (req, res) => {
+    try {
+        const credential = await signInWithEmailAndPassword(firebaseAuth, req.body["login-email"], req.body["login-password"]);
+        console.log(credential.user.displayName + " masuk.")
+        res.redirect(".");
+    } catch (error) {
+        console.error("Login user gagal", error);
+        res.render("login", { login: true, title: "Masuk", wrongUser: true });
     }
+});
+
+// Logout
+app.get("/logout", async (_req, res) => {
+    console.log(currentUser?.displayName + " keluar.")
+
+    await signOut(firebaseAuth)
+    res.redirect("/login");
+});
+
+// Halaman register
+app.get("/register", (_req, res) => {
+    if (currentUser) res.redirect("/");
+    else res.render("register", { login: true, title: "Daftar" });
 });
 
 // POST register
 app.post("/register", upload.single("register-photo"), async (req, res) => {
     const email = req.body["register-email"];
     const password = req.body["register-password"];
-    
+
     // Lempar error jika email dan password kosong
     if (!email && !password) {
         res.redirect("/register");
@@ -118,32 +140,38 @@ app.post("/register", upload.single("register-photo"), async (req, res) => {
     }
 
     console.log("Menyimpan user...");
-    // Register ke Authentication
-    let uid: string = "0";
+    let user: User;
+
+    // Informasi pribadi
+    const userInformation = {
+        name: req.body["register-name"] as string,
+        nim: req.body["register-nim"] as string,
+        email: req.body["register-email"] as string,
+        fakultas: req.body["register-fakultas"] as string,
+        studi: req.body["register-studi"] as string,
+        photo: "/" + req.file?.path as string,
+    }
+
     try {
-        const user = await createUserWithEmailAndPassword(firebaseAuth, email, password);
-        uid = user.user.uid;
+        user = await createUserWithEmailAndPassword(firebaseAuth, email, password)
+            .then(user => user.user);
+        
+        // Simpan data pribadi juga ke Authentication
+        updateProfile(user, {
+            displayName: req.body["register-name"],
+            photoURL: userInformation.photo
+        });
     } catch (error) {
         console.error("Menyimpan user gagal", error);
-        return res.render("register", {
-            login: true,
-            title: "Daftar",
-            alreadyRegistered: true
-        });
+        return res.render("register", { login: true, title: "Daftar", alreadyRegistered: true });
     }
 
     // Simpan informasi pribadi
-    await addDoc(collection(firestore, "users"), {
-        userId: uid,
-        name: req.body["register-name"],
-        nim: req.body["register-nim"],
-        email: req.body["register-email"],
-        fakultas: req.body["register-fakultas"],
-        studi: req.body["register-studi"],
-        photo: __dirname + "/" + req.file?.path
-    });
+    await setDoc(doc(firestore, "users", user.uid), userInformation);
+    // Simpan placeholder history
+    await setDoc(doc(firestore, "history", user.uid), { history: [] });
 
-    // Lanjutkan ke login (seharusnya langsung masuk dashboard)
+    // Lanjutkan ke login
     console.log("User tersimpan");
     res.redirect("/login");
 });
@@ -151,20 +179,3 @@ app.post("/register", upload.single("register-photo"), async (req, res) => {
 app.listen(process.env.PORT || 8080, () => {
     open("http://localhost:8080");
 });
-
-// Fungsi //
-/**
- * Random token untuk sesi login
- * 
- * @param {number?} length 
- * @returns {string} Generated token
- */
-function generateToken(length = 32) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?';
-    let token = "";
-    for (let i = 0; i < length; i++) {
-        const randomIndex = Math.floor(Math.random() * characters.length);
-        token += characters[randomIndex];
-    }
-    return token;
-}

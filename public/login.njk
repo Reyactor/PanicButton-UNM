@@ -25,4 +25,10 @@
         </form>
     </div>
 </div>
+
+{% if wrongUser %}
+    <script>
+        alert("Kata sandi atau email salah. Silahkan coba lagi.");
+    </script>
+{% endif %}
 {% endblock %}
