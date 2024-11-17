@@ -1,11 +1,11 @@
-import express from "express";
+import express, { text } from "express";
 import multer from "multer";
 import nunjucks from "nunjucks";
 import open from "open";
 
 // Firebase
 import { initializeApp } from "@firebase/app";
-import { getFirestore, doc, setDoc } from "@firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc, arrayUnion, updateDoc } from "@firebase/firestore";
 import { 
     getAuth,
     createUserWithEmailAndPassword,
@@ -50,10 +50,25 @@ const upload = multer({ dest: "uploads/" });
 
 // Persiapkan nunjucks
 app.set("view engine", "njk");
-nunjucks.configure("public", {
+const njk = nunjucks.configure("public", {
     watch: true,
     express: app,
     autoescape: true
+});
+
+// Filter nunjucks
+njk.addFilter("date", (date: number) => {
+    const months = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    const d = new Date(date);
+    const month = months[d.getMonth()];
+    const day = d.getDate();
+    const year = d.getFullYear();
+    
+    return `${day} ${month} ${year}` ;
 });
 
 // File static
@@ -73,25 +88,99 @@ app.use((req, res, next) => {
     }
 })
 
+// Halaman utama
+///////////////////////////////////////////////////////
+
 // Halaman utama (atau login jika belum login)
 app.get("/", (_req, res) => {
-    res.render("index", { title: "Beranda" });
+    res.render("index", { title: "Beranda", noDummy: true });
 });
+
+// POST Terima data emergency lalu kirim ke telegram
+app.post("/emergency", express.json(), async (req, res): Promise<any> => {
+    if (!currentUser) {
+        return res.json({ error: true, message: "Status login tidak ditemukan." });
+    }
+
+    console.log("Laporan baru dari " + currentUser.displayName);
+    try {
+        const data = {
+            name: currentUser.displayName || "NoName",
+            latitude: req.body.latitude,
+            longitute: req.body.longitude,
+            date: Date.now(),
+            gmap: `https://www.google.com/maps?q=loc:${req.body.latitude},${req.body.longitude}`
+        }
+
+        // Tambah emergency user ke history
+        console.log("Menyimpan history...");
+        await updateDoc(doc(firestore, "history", currentUser.uid), {
+            history: arrayUnion(data)
+        });
+
+        // Kirim informasi ke bot telegram
+        console.log("Mengirim ke Telegram...");
+        const information = await getDoc(doc(firestore, "users", currentUser.uid));
+
+        let message = "**🚨 Laporan Terbaru!**";
+        message += "\n\n";
+        message += `Nama: ${currentUser.displayName || "NoName"}\n`;
+        message += `NIM: ${information.get("nim")}\n`;
+        message += `Email: ${information.get("email")}\n`;
+        message += `Fakultas: ${information.get("fakultas")}\n`;
+        message += `Prodi: ${information.get("studi")}\n`;
+        message += `Latitude: ${data.latitude}\n`;
+        message += `Longitude: ${data.longitute}\n`;
+        message += `\n\n`;
+        message += data.gmap;
+
+        await fetch(`https://api.telegram.org/bot${Bun.env["TELEGRAM_BOT_TOKEN"]}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: Bun.env["TELEGRAM_CHAT_ID"],
+                text: message
+            })
+        });
+        
+        console.log("Laporan berhasil dikirim!")
+        // Beritahu client
+        res.json({ error: false, message: "Tersimpan!" });
+    } catch (error) {
+        console.error(error);
+        res.json({ error: true, message: "Tidak diketahui." })
+    }
+});
+
+// Halaman biasa
+///////////////////////////////////////////////////////
 
 // Halaman profil
-app.get("/profile", (_req, res) => {
-    res.render("profile", { title: "Profil" });
+app.get("/profile", async (_req, res) => {
+    const information = await getDoc(doc(firestore, "users", currentUser?.uid || "0"))
+        .then(res => res.data())
+        .catch(console.error);
+
+    res.render("profile", { title: "Profil", information });
 });
+
+// Akses ke foto profil
+app.use("/uploads", express.static(__dirname + "/uploads"));
 
 // Halaman riwayat
-app.get("/history", (_req, res) => {
-    res.render("history", { title: "Riwayat" });
+app.get("/history", async (_req, res) => {
+    const histories = await getDoc(doc(firestore, "history", currentUser?.uid || "0"))
+        .then(res => res.get("history"))
+        .catch(console.error);
+    const information = await getDoc(doc(firestore, "users", currentUser?.uid || "0"))
+        .then(res => res.data())
+        .catch(console.error);
+
+    res.render("history", { title: "Riwayat", histories, information });
 });
 
-// Halaman pengaturan
-app.get("/settings", (_req, res) => {
-    res.render("settings", { title: "Pengaturan" });
-});
+// Halaman login dan logout
+///////////////////////////////////////////////////////
 
 // Halaman login
 app.get("/login", (_req, res) => {
@@ -121,6 +210,9 @@ app.get("/logout", async (_req, res) => {
     await signOut(firebaseAuth)
     res.redirect("/login");
 });
+
+// Halaman register
+///////////////////////////////////////////////////////
 
 // Halaman register
 app.get("/register", (_req, res) => {
@@ -166,15 +258,18 @@ app.post("/register", upload.single("register-photo"), async (req, res) => {
         return res.render("register", { login: true, title: "Daftar", alreadyRegistered: true });
     }
 
+    console.log("Menyimpan informasi pribadi...")
     // Simpan informasi pribadi
     await setDoc(doc(firestore, "users", user.uid), userInformation);
     // Simpan placeholder history
     await setDoc(doc(firestore, "history", user.uid), { history: [] });
 
     // Lanjutkan ke login
-    console.log("User tersimpan");
+    console.log("Penyimpanan user dan informasi berhasil!");
     res.redirect("/login");
 });
+
+///////////////////////////////////////////////////////
 
 app.listen(process.env.PORT || 8080, () => {
     open("http://localhost:8080");

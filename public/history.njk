@@ -1,7 +1,31 @@
 {% extends "_templates/body.njk" %}
 
 {% block content %}
-    <div class="w-100 h-100">
+    <div class="w-100 h-100 d-flex flex-column overflow-x-auto">
+        <div class="p-2">
+            <h1 class="fw-bold">Riwayat</h1>
+        </div>
 
+        {% for item in histories | reverse %}
+            <div class="w-100 border p-2">
+                {{ item.date | date }}
+                <br><br>
+                Nama: {{ information.name }}
+                <br>
+                NIM: {{ information.nim }}
+                <br>
+                Email: {{ information.email }}
+                <br>
+                Fakultas: {{ information.fakultas }}
+                <br>
+                Program Studi: {{ information.studi }}
+                <br><br>
+                Latitude: {{ item.latitude }}
+                <br>
+                Longitude: {{ item.longitute }}
+                <br>
+                <a href="{{ item.gmap }}" target="_blank">{{ item.gmap }}</a>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}

@@ -1,7 +1,21 @@
 {% extends "_templates/body.njk" %}
 
 {% block content %}
-    <div class="w-100 h-100">
+    <div class="w-100 h-100 d-flex flex-column overflow-x-auto p-2">
+        <div>
+            <h1 class="fw-bold">Profil</h1>
+            <hr>
+        </div>
 
+        <div class="p-2 d-flex flex-column">
+            <img class="rounded-circle border border-3 border-primary" src="{{ information.photo }}" alt="{{ information.name }}" width="150" height="150">
+            <h2 class="fw-bold mt-2 mb-1">{{ information.name }}</h2>
+            <b>NIM: {{ information.nim }}</b>
+            <br>
+            <span>Fakultas: {{ information.fakultas }}</span>
+            <span>Program Studi: {{ information.studi }}</span>
+            <span>Email: {{ information.email }}</span>
+            <span></span>
+        </div>
     </div>
 {% endblock %}
